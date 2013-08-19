@@ -1,0 +1,31 @@
+upstream riak_cs_host {
+  # server  127.0.0.1:8080; # Use this if you are only going to use riak-cs on 1 host.
+  # Or you can use the hosts all at once if this is a loadbalancer:
+  server 10.100.10.10:8080;
+  server 10.100.10.11:8080;
+  server 10.100.10.1:8080;
+}
+
+server {
+  listen   80;
+  server_name  *.data.yourdomain.org data.yourdomain.org;
+  access_log  /var/log/nginx/riak_cs.access.log;
+
+  location / {
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_redirect off;
+
+      proxy_connect_timeout      90;
+      proxy_send_timeout         90;
+      proxy_read_timeout         90;
+
+      proxy_buffers 8 32k;
+
+      proxy_buffer_size          64k;  # If set to a smaller value,
+                                       # nginx can complain with a
+                                       # "headers too large" error
+
+      proxy_pass http://riak_cs_host;
+    }
+}
